@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kirederik/backstage-scaffolder-kubernetes.git"
+    "url": "git+https://github.com/kirederik/backstage-k8s-scaffolder-actions"
   },
   "scripts": {
     "start": "backstage-cli package start",
