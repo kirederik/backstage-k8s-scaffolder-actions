@@ -9,7 +9,7 @@ It contains a set of actions to create and manage Kubernetes resources.
 In the root directory of your Backstage project:
 
 ```
-yarn add --cwd packages/backend @devangelista/backstage-k8s-scaffolder-actions
+yarn add --cwd packages/backend @devangelista/backstage-scaffolder-kubernetes
 ```
 
 Make sure to add a Kubernetes section to your `app-config.yaml` (check the

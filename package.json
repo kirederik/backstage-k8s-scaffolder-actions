@@ -1,6 +1,6 @@
 {
   "name": "@devangelista/backstage-scaffolder-kubernetes",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Custom Backstage scaffolder actions to execute Kubernetes operations directly from your Backstage templates",
   "main": "dist/index.cjs.js",
   "types": "dist/index.d.ts",
@@ -39,6 +39,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@backstage/cli": "^0.24.0",
+    "@backstage/config": "^1.1.1",
+    "@backstage/integration": "^1.8.0",
     "@backstage/plugin-scaffolder-node": "^0.2.8",
     "@kubernetes/client-node": "^0.20.0",
     "backstage-cli": "1.0.0-alpha.2",
@@ -50,9 +52,9 @@
     "dist"
   ],
   "bugs": {
-    "url": "https://github.com/kirederik/backstage-scaffolder-kubernetes/issues"
+    "url": "https://github.com/kirederik/backstage-k8s-scaffolder-actions"
   },
-  "homepage": "https://github.com/kirederik/backstage-scaffolder-kubernetes",
+  "homepage": "https://github.com/kirederik/backstage-k8s-scaffolder-actions",
   "devDependencies": {
     "@types/jest": "^29.5.8",
     "@types/js-yaml": "^4.0.9",
