@@ -24,7 +24,7 @@ export const apply: () => TemplateAction<ApplyActionInput> = () => {
       }),
     },
 
-    async handler(ctx) {
+    async handler(ctx: any) {
       try {
         const resp = await kubeApply(ctx.input.manifest, ctx.logger);
         ctx.logger.info(

@@ -38,6 +38,9 @@
   "author": "Derik Evangelista <hi@derik.dev>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@backstage/backend-common": "^0.24.1",
+    "@backstage/backend-defaults": "^0.4.4",
+    "@backstage/backend-plugin-api": "^0.8.1",
     "@backstage/cli": "^0.24.0",
     "@backstage/config": "^1.1.1",
     "@backstage/integration": "^1.8.0",

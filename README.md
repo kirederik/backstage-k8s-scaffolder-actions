@@ -8,45 +8,21 @@ It contains a set of actions to create and manage Kubernetes resources.
 
 In the root directory of your Backstage project:
 
-```
-yarn add --cwd packages/backend @devangelista/backstage-scaffolder-kubernetes
+```bash
+yarn add @devangelista/backstage-scaffolder-kubernetes
 ```
 
 Make sure to add a Kubernetes section to your `app-config.yaml` (check the
 Backstage docs)
 
-
 On your `package/backend/src/scaffolder.ts` file, add the following:
 
 ```ts
-import { kubernetesActions } from '@devangelista/backstage-scaffolder-kubernetes';
-
-export default async function createPlugin(
-  env: PluginEnvironment,
-): Promise<Router> {
-  const catalogClient = new CatalogClient({ discoveryApi: env.discovery });
-  const integrations = ScmIntegrations.fromConfig(env.config);
-
-  const builtInActions = createBuiltinActions({
-    integrations,
-    catalogClient,
-    config: env.config,
-    reader: env.reader,
-  });
-
-  const actions = [...builtInActions, ...kubernetesActions()]; // <-- add this line
-
-  return await createRouter({
-    actions,
-    catalogClient,
-    logger: env.logger,
-    config: env.config,
-    database: env.database,
-    reader: env.reader,
-    identity: env.identity,
-  });
-}
+backend.add(import("@devangelista/backstage-scaffolder-kubernetes"));
 ```
+
+The scaffolder `kube` actions should now be available to use on your templates. Check the
+`/create/actions` endpoint for documentation.
 
 # Usage
 
@@ -89,7 +65,6 @@ spec:
         name: ${{ parameters.name }}
 
 ---
-
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
