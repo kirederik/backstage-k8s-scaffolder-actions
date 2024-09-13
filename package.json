@@ -1,6 +1,6 @@
 {
   "name": "@devangelista/backstage-scaffolder-kubernetes",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Custom Backstage scaffolder actions to execute Kubernetes operations directly from your Backstage templates",
   "main": "dist/index.cjs.js",
   "types": "dist/index.d.ts",
