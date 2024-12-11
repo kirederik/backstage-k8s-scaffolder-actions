@@ -2,8 +2,8 @@ import {
   TemplateAction,
   createTemplateAction,
 } from "@backstage/plugin-scaffolder-node";
-import { z } from "zod";
 import * as k8s from "@kubernetes/client-node";
+import { z } from "zod";
 
 type WaitActionInput = {
   labels: Record<string, string>;
@@ -69,7 +69,7 @@ async function kubeWait(labels: Record<string, string>, namespace: string) {
       );
       if (req.body.items.length > 1) {
         // return true if the jobcompleted
-        throw Error("Found multiple jobs " + req.body.items.length);
+        throw Error(`Found multiple jobs: ${req.body.items.length}`);
       }
       const job = req.body.items[0];
       // return true if the jobcompleted
