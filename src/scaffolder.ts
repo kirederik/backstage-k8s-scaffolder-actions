@@ -1,8 +1,8 @@
-import { scaffolderActionsExtensionPoint } from "@backstage/plugin-scaffolder-node/alpha";
 import {
-  createBackendModule,
   coreServices,
+  createBackendModule,
 } from "@backstage/backend-plugin-api";
+import { scaffolderActionsExtensionPoint } from "@backstage/plugin-scaffolder-node/alpha";
 
 import { kubernetesActions } from "./actions";
 // import { ScmIntegrations } from "@backstage/integration";
