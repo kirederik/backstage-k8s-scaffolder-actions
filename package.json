@@ -1,6 +1,6 @@
 {
   "name": "@devangelista/backstage-scaffolder-kubernetes",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Custom Backstage scaffolder actions to execute Kubernetes operations directly from your Backstage templates",
   "main": "dist/index.cjs.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,10 @@
     "types": "dist/index.d.ts"
   },
   "backstage": {
-    "role": "backend-plugin-module"
+    "role": "backend-plugin-module",
+    "pluginId": "k8s-scaffolder-actions",
+    "pluginPackage": "@backstage/plugin-scaffolder",
+    "parentPlugin": "scaffolder"
   },
   "repository": {
     "type": "git",
@@ -24,7 +27,8 @@
     "test": "backstage-cli package test",
     "clean": "backstage-cli package clean",
     "prepack": "backstage-cli package prepack",
-    "postpack": "backstage-cli package postpack"
+    "postpack": "backstage-cli package postpack",
+    "fix": "backstage-cli repo fix --publish"
   },
   "keywords": [
     "backstage",
