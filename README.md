@@ -45,8 +45,13 @@ kubernetes:
           url: https://my-dev-cluster.example.com
           authProvider: serviceAccount
           serviceAccountToken: ${K8S_DEV_SA_TOKEN}
+          skipTLSVerify: true
+        - name: production
+          url: https://my-prod-cluster.example.com
+          authProvider: serviceAccount
+          serviceAccountToken: ${K8S_PROD_SA_TOKEN}
           skipTLSVerify: false
-          caData: ${K8S_DEV_CA_DATA}
+          caData: ${K8S_PROD_CA_DATA}
 ```
 
 # Usage
@@ -79,12 +84,12 @@ spec:
         cluster:
           type: string
           enum:
-            - kind-kind
-            - kind-platform
+            - development
+            - production
           ui:autocomplete:
             options:
-              - kind-kind
-              - kind-platform
+              - development
+              - production
   steps:
     - action: kube:apply
       id: k-apply
@@ -123,12 +128,12 @@ spec:
         cluster:
           type: string
           enum:
-            - kind-kind
-            - kind-platform
+            - development
+            - production
           ui:autocomplete:
             options:
-              - kind-kind
-              - kind-platform
+              - development
+              - production
   steps:
     - action: kube:delete
       id: k-delete
