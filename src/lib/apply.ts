@@ -1,15 +1,29 @@
 // https://github.com/kubernetes-client/javascript/blob/master/examples/typescript/apply/apply-example.ts
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
+import { KubernetesClientFactory } from "./kubernetes-client-factory";
 
 export async function kubeApply(
   specString: string,
-  logger: any
+  logger: any,
+  kubeClientFactory?: KubernetesClientFactory,
+  clusterName?: string
 ): Promise<k8s.KubernetesObjectWithSpec[]> {
-  const kc = new k8s.KubeConfig();
-  kc.loadFromDefault();
+  let client: k8s.KubernetesObjectApi;
 
-  const client = k8s.KubernetesObjectApi.makeApiClient(kc);
+  if (kubeClientFactory) {
+    // Use the KubernetesClientFactory if provided
+    client = kubeClientFactory.getObjectsClient({
+      clusterName: clusterName,
+    });
+    logger.info(`Using KubernetesClientFactory for cluster: ${clusterName || 'default'}`);
+  } else {
+    // Fallback to default KubeConfig
+    logger.info('Using default KubeConfig');
+    const kc = new k8s.KubeConfig();
+    kc.loadFromDefault();
+    client = k8s.KubernetesObjectApi.makeApiClient(kc);
+  }
 
   const specs: k8s.KubernetesObjectWithSpec[] = yaml.loadAll(specString) as any;
   const validSpecs = specs.filter((s) => s && s.kind && s.metadata);
@@ -26,9 +40,9 @@ export async function kubeApply(
     try {
       // try to get the resource, if it does not exist an error will be thrown and we will end up in the catch
       // block.
-      logger.info("attempting to get resource");
+      logger.info(`Attempting to get resource ${spec.kind}/${spec.metadata.name}`);
       await client.read(spec as any);
-      logger.info("resource exists, attempting to patch");
+      logger.info(`Resource exists, attempting to patch ${spec.kind}/${spec.metadata.name}`);
       // patch with merge strategy
       // the body of the request was in an unknown format - accepted media types include: application/json-patch+json, application/merge-patch+json, application/apply-patch+yaml
       const response = await client.patch(
@@ -46,9 +60,7 @@ export async function kubeApply(
       created.push(response.body);
     } catch (e) {
       // we did not get the resource, so it does not exist, so create it
-      logger.info("something went wrong");
-      logger.error(JSON.stringify(e.body, null, 2));
-      logger.info("attempting to create resource");
+      logger.info(`Resource not found, attempting to create ${spec.kind}/${spec.metadata.name}`);
       const response = await client.create(spec);
       created.push(response.body);
     }

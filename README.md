@@ -24,6 +24,31 @@ backend.add(import("@devangelista/backstage-scaffolder-kubernetes"));
 The scaffolder `kube` actions should now be available to use on your templates. Check the
 `/create/actions` endpoint for documentation.
 
+# Kubernetes Configuration
+
+This plugin now integrates with Backstage's Kubernetes integration features, allowing you to:
+
+1. Use multiple Kubernetes clusters configured in your Backstage `app-config.yaml`
+2. Support various authentication methods (ServiceAccount, Google Cloud, AWS, Azure)
+3. Specify which cluster to use for each action
+
+## Configuration Example
+
+Here's an example Kubernetes configuration in `app-config.yaml`:
+
+```yaml
+kubernetes:
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - name: development
+          url: https://my-dev-cluster.example.com
+          authProvider: serviceAccount
+          serviceAccountToken: ${K8S_DEV_SA_TOKEN}
+          skipTLSVerify: false
+          caData: ${K8S_DEV_CA_DATA}
+```
+
 # Usage
 
 You can now use the actions in your templates:
@@ -32,45 +57,9 @@ You can now use the actions in your templates:
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: Delete-action
-  description: Delete a Kubernetes resources
-  title: Delete a Kubernetes resources
-spec:
-  lifecycle: experimental
-  owner: user
-  parameters:
-    - properties:
-        name:
-          title: Resource Name
-          description: The name of the resource to delete
-          type: string
-          ui:autofocus: true
-        namespace:
-          title: Namespace
-          description: The namespace of the resource
-          type: string
-          default: default
-      title: Resource
-      required:
-        - name
-        - namespace
-  steps:
-    - action: kube:delete
-      id: k-delete
-      name: Delete
-      input:
-        apiVersion: example.group.bar/v1
-        kind: Foo
-        namespace: ${{parameters.namespace}}
-        name: ${{ parameters.name }}
-
----
-apiVersion: scaffolder.backstage.io/v1beta3
-kind: Template
-metadata:
-  description: Create a Kubernetes resources
-  name: create-resource
-  title: Jenkins
+  description: Create a Namespace in Kubernetes
+  name: create-namespace
+  title: Create a Namespace
 spec:
   lifecycle: experimental
   owner: user
@@ -78,30 +67,87 @@ spec:
   parameters:
     - properties:
         name:
-          description: The name of the Resource
+          description: The namespace name
           title: Name
           type: string
           ui:autofocus: true
       required:
         - name
-      title: Resource
+      title: Namespace Name
+    - title: Cluster Name
+      properties:
+        cluster:
+          type: string
+          enum:
+            - kind-kind
+            - kind-platform
+          ui:autocomplete:
+            options:
+              - kind-kind
+              - kind-platform
   steps:
     - action: kube:apply
       id: k-apply
       name: Create a Resouce
       input:
-        namespaced: true
+        namespaced: false
+        clusterName: ${{ parameters.cluster }}
         manifest: |
-          apiVersion: example.group.bar/v1
-          kind: Foo
+          apiVersion: v1
+          kind: Namespace
           metadata:
             name: ${{ parameters.name }}
-            namespace: default
-    - action: kube:job:wait
-      id: k-wait
-      name: Wait for a Job to complete
+---
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: delete-namespace
+  description: Delete a Namespace in Kubernetes
+  title: Delete a Namespace
+spec:
+  lifecycle: experimental
+  owner: user
+  type: example
+  parameters:
+    - properties:
+        name:
+          title: Name
+          description: The name of the namespace to delete
+          type: string
+          ui:autofocus: true
+      title: Namespace Name
+      required:
+        - name
+    - title: Cluster Name
+      properties:
+        cluster:
+          type: string
+          enum:
+            - kind-kind
+            - kind-platform
+          ui:autocomplete:
+            options:
+              - kind-kind
+              - kind-platform
+  steps:
+    - action: kube:delete
+      id: k-delete
+      name: Delete
       input:
-        labels:
-          job-name: foo-bar
-          # more labels
+        apiVersion: v1
+        kind: Namespace
+        clusterName: ${{ parameters.cluster }}
+        name: ${{ parameters.name }}
 ```
+
+## Authentication Methods
+
+The plugin currently supports the following authentication methods:
+
+1. **Service Account**: Uses a service account token
+
+More methods coming soon!
+
+If no specific cluster is specified, the plugin will use the first cluster defined in the configuration, or fall back to using local kubeconfig.
+
+

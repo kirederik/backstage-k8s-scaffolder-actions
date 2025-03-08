@@ -4,13 +4,17 @@ import {
 } from "@backstage/plugin-scaffolder-node";
 import { z } from "zod";
 import { kubeApply } from "../lib/apply";
+import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
 type ApplyActionInput = {
   manifest: string;
   namespaced: boolean;
+  clusterName?: string;
 };
 
-export const apply: () => TemplateAction<ApplyActionInput> = () => {
+export const apply = (
+  kubeClientFactory?: KubernetesClientFactory
+): TemplateAction<ApplyActionInput> => {
   return createTemplateAction<ApplyActionInput>({
     id: "kube:apply",
     schema: {
@@ -20,16 +24,31 @@ export const apply: () => TemplateAction<ApplyActionInput> = () => {
           .describe("The resource manifest to apply in the Platform cluster"),
         namespaced: z
           .boolean()
-          .describe("Whether the API is namespaced or not"),
+          .describe("Whether the API is namespaced or if its not"),
+        clusterName: z
+          .string()
+          .optional()
+          .describe("The name of the Kubernetes cluster to use (from app-config)"),
       }),
     },
 
     async handler(ctx: any) {
       try {
-        const resp = await kubeApply(ctx.input.manifest, ctx.logger);
-        ctx.logger.info(
-          `Successfully created/updated ${resp[0]?.metadata?.namespace}/${resp[0]?.metadata?.name} the resource.`
+        const resp = await kubeApply(
+          ctx.input.manifest,
+          ctx.logger,
+          kubeClientFactory,
+          ctx.input.clusterName
         );
+        if (ctx.namespaced) {
+          ctx.logger.info(
+            `Successfully created/updated ${resp[0]?.kind}/${resp[0]?.metadata?.namespace}/${resp[0]?.metadata?.name}.`
+          );
+        } else {
+          ctx.logger.info(
+            `Successfully created/updated ${resp[0]?.kind}/${resp[0]?.metadata?.name}.`
+          );
+        }
       } catch (e) {
         ctx.logger.error(
           `Something went wrong: ${JSON.stringify(

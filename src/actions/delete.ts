@@ -4,15 +4,19 @@ import {
 } from "@backstage/plugin-scaffolder-node";
 import { z } from "zod";
 import { kubeDelete } from "../lib/delete";
+import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
 type DeleteActionInput = {
   namespace: string;
   apiVersion: string;
   kind: string;
   name: string;
+  clusterName?: string;
 };
 
-export const deleteAction: () => TemplateAction<DeleteActionInput> = () => {
+export const deleteAction = (
+  kubeClientFactory?: KubernetesClientFactory
+): TemplateAction<DeleteActionInput> => {
   return createTemplateAction<DeleteActionInput>({
     id: "kube:delete",
     schema: {
@@ -24,6 +28,10 @@ export const deleteAction: () => TemplateAction<DeleteActionInput> = () => {
           .string()
           .default("default")
           .describe("The namespace of the resource"),
+        clusterName: z
+          .string()
+          .optional()
+          .describe("The name of the Kubernetes cluster to use (from app-config)"),
       }),
     },
 
@@ -34,7 +42,9 @@ export const deleteAction: () => TemplateAction<DeleteActionInput> = () => {
           ctx.input.kind,
           ctx.input.name,
           ctx.input.namespace,
-          ctx.logger
+          ctx.logger,
+          kubeClientFactory,
+          ctx.input.clusterName
         );
         ctx.logger.info(`Successfully deleted the resource`);
       } catch (e) {

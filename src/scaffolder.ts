@@ -6,6 +6,7 @@ import { scaffolderActionsExtensionPoint } from "@backstage/plugin-scaffolder-no
 
 import { kubernetesActions } from "./actions";
 // import { ScmIntegrations } from "@backstage/integration";
+import { KubernetesClientFactory } from "./lib/kubernetes-client-factory";
 
 export const scaffolderK8sActions = createBackendModule({
   pluginId: "scaffolder",
@@ -15,11 +16,16 @@ export const scaffolderK8sActions = createBackendModule({
       deps: {
         scaffolder: scaffolderActionsExtensionPoint,
         config: coreServices.rootConfig,
+        logger: coreServices.logger,
       },
-      async init({ scaffolder }) {
-        // const integrations = ScmIntegrations.fromConfig(config);
+      async init({ scaffolder, config, logger }) {
+        // Create a shared Kubernetes client factory instance
+        const kubeClientFactory = new KubernetesClientFactory({
+          logger,
+          config,
+        });
 
-        scaffolder.addActions(...kubernetesActions());
+        scaffolder.addActions(...kubernetesActions(kubeClientFactory));
       },
     });
   },

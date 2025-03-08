@@ -4,13 +4,18 @@ import {
 } from "@backstage/plugin-scaffolder-node";
 import * as k8s from "@kubernetes/client-node";
 import { z } from "zod";
+import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
 type WaitActionInput = {
   labels: Record<string, string>;
   namespace: string;
+  clusterName?: string;
+  timeoutSeconds?: number;
 };
 
-export const wait: () => TemplateAction<WaitActionInput> = () => {
+export const wait = (
+  kubeClientFactory?: KubernetesClientFactory
+): TemplateAction<WaitActionInput> => {
   return createTemplateAction<WaitActionInput>({
     id: "kube:job:wait",
     schema: {
@@ -22,6 +27,15 @@ export const wait: () => TemplateAction<WaitActionInput> = () => {
           .string()
           .default("default")
           .describe("The namespace of the resource to wait on, e.g. default"),
+        clusterName: z
+          .string()
+          .optional()
+          .describe("The name of the Kubernetes cluster to use (from app-config)"),
+        timeoutSeconds: z
+          .number()
+          .optional()
+          .default(60)
+          .describe("The timeout in seconds to wait for the job to complete"),
       }),
     },
 
@@ -29,7 +43,11 @@ export const wait: () => TemplateAction<WaitActionInput> = () => {
       try {
         const conditions = await kubeWait(
           ctx.input.labels,
-          ctx.input.namespace
+          ctx.input.namespace,
+          kubeClientFactory,
+          ctx.input.clusterName,
+          ctx.input.timeoutSeconds || 60,
+          ctx.logger
         );
         ctx.logger.info("returning successfully");
         conditions?.forEach((condition) => {
@@ -45,16 +63,37 @@ export const wait: () => TemplateAction<WaitActionInput> = () => {
 };
 
 // https://github.com/kubernetes-client/javascript/blob/master/examples/typescript/apply/apply-example.ts
-async function kubeWait(labels: Record<string, string>, namespace: string) {
+async function kubeWait(
+  labels: Record<string, string>,
+  namespace: string,
+  kubeClientFactory?: KubernetesClientFactory,
+  clusterName?: string,
+  timeoutSeconds: number = 60,
+  logger?: any
+) {
   let attempts: number = 0;
+  const maxAttempts = Math.ceil(timeoutSeconds / 5); // Check every 5 seconds
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  const kc = new k8s.KubeConfig();
-  kc.loadFromDefault();
+  let jobApi: k8s.BatchV1Api;
 
-  const jobApi = kc.makeApiClient(k8s.BatchV1Api);
-  while (attempts < 10) {
+  if (kubeClientFactory) {
+    // Use the KubernetesClientFactory if provided
+    jobApi = kubeClientFactory.getApiClient(k8s.BatchV1Api, {
+      clusterName: clusterName,
+      namespace: namespace,
+    });
+    logger?.info(`Using KubernetesClientFactory for cluster: ${clusterName || 'default'}`);
+  } else {
+    // Fallback to default KubeConfig
+    logger?.info('Using default KubeConfig');
+    const kc = new k8s.KubeConfig();
+    kc.loadFromDefault();
+    jobApi = kc.makeApiClient(k8s.BatchV1Api);
+  }
+
+  while (attempts < maxAttempts) {
     try {
       // get the job by labels
       const req = await jobApi.listNamespacedJob(
@@ -73,16 +112,16 @@ async function kubeWait(labels: Record<string, string>, namespace: string) {
       }
       const job = req.body.items[0];
       // return true if the jobcompleted
-      console.log(job.metadata?.name);
+      logger?.info(`Checking job: ${job.metadata?.name}`);
       if (job.status?.completionTime) {
         return job.status?.conditions;
       }
     } catch (err) {
-      console.log("exploded here");
+      logger?.error("Error checking job status:", err);
     }
-    console.log("requeue");
+    logger?.info("Waiting for job to complete, attempt: " + (attempts + 1));
     attempts++;
     await delay(5000);
   }
-  throw Error("Timed out waiting for job to complete");
+  throw Error(`Timed out waiting for job to complete after ${timeoutSeconds} seconds`);
 }
