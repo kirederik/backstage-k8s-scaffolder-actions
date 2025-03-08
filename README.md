@@ -15,7 +15,7 @@ yarn add @devangelista/backstage-scaffolder-kubernetes
 Make sure to add a Kubernetes section to your `app-config.yaml` (check the
 Backstage docs)
 
-On your `package/backend/src/scaffolder.ts` file, add the following:
+On your `package/backend/src/index.ts` file, add the following:
 
 ```ts
 backend.add(import("@devangelista/backstage-scaffolder-kubernetes"));
