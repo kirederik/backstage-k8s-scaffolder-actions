@@ -11,6 +11,7 @@ type WaitActionInput = {
   namespace: string;
   clusterName?: string;
   timeoutSeconds?: number;
+  token?: string;
 };
 
 export const wait = (
@@ -36,6 +37,12 @@ export const wait = (
           .optional()
           .default(60)
           .describe("The timeout in seconds to wait for the job to complete"),
+        token: z
+          .string()
+          .optional()
+          .describe(
+            'An optional OIDC token that will be used to authenticate to the Kubernetes cluster',
+          ),
       }),
     },
 
@@ -47,7 +54,8 @@ export const wait = (
           kubeClientFactory,
           ctx.input.clusterName,
           ctx.input.timeoutSeconds || 60,
-          ctx.logger
+          ctx.logger,
+          ctx.input.token
         );
         ctx.logger.info("returning successfully");
         conditions?.forEach((condition) => {
@@ -69,7 +77,8 @@ async function kubeWait(
   kubeClientFactory?: KubernetesClientFactory,
   clusterName?: string,
   timeoutSeconds: number = 60,
-  logger?: any
+  logger?: any,
+  token?: string
 ) {
   let attempts: number = 0;
   const maxAttempts = Math.ceil(timeoutSeconds / 5); // Check every 5 seconds
@@ -83,6 +92,7 @@ async function kubeWait(
     jobApi = kubeClientFactory.getApiClient(k8s.BatchV1Api, {
       clusterName: clusterName,
       namespace: namespace,
+      token: token,
     });
     logger?.info(`Using KubernetesClientFactory for cluster: ${clusterName || 'default'}`);
   } else {

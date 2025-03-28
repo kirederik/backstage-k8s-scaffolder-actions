@@ -12,6 +12,7 @@ type DeleteActionInput = {
   kind: string;
   name: string;
   clusterName?: string;
+  token?: string;
 };
 
 export const deleteAction = (
@@ -32,6 +33,12 @@ export const deleteAction = (
           .string()
           .optional()
           .describe("The name of the Kubernetes cluster to use (from app-config)"),
+        token: z
+          .string()
+          .optional()
+          .describe(
+            'An optional OIDC token that will be used to authenticate to the Kubernetes cluster',
+          ),
       }),
     },
 
@@ -44,7 +51,8 @@ export const deleteAction = (
           ctx.input.namespace,
           ctx.logger,
           kubeClientFactory,
-          ctx.input.clusterName
+          ctx.input.clusterName,
+          ctx.input.token
         );
         ctx.logger.info(`Successfully deleted the resource`);
       } catch (e) {

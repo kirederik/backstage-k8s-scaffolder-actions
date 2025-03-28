@@ -7,7 +7,8 @@ export async function kubeApply(
   specString: string,
   logger: any,
   kubeClientFactory?: KubernetesClientFactory,
-  clusterName?: string
+  clusterName?: string,
+  token?: string
 ): Promise<k8s.KubernetesObjectWithSpec[]> {
   let client: k8s.KubernetesObjectApi;
 
@@ -15,6 +16,7 @@ export async function kubeApply(
     // Use the KubernetesClientFactory if provided
     client = kubeClientFactory.getObjectsClient({
       clusterName: clusterName,
+      token: token,
     });
     logger.info(`Using KubernetesClientFactory for cluster: ${clusterName || 'default'}`);
   } else {
