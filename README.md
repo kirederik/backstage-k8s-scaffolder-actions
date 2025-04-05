@@ -29,7 +29,7 @@ The scaffolder `kube` actions should now be available to use on your templates. 
 This plugin now integrates with Backstage's Kubernetes integration features, allowing you to:
 
 1. Use multiple Kubernetes clusters configured in your Backstage `app-config.yaml`
-2. Support various authentication methods (ServiceAccount, Google Cloud, AWS, Azure)
+2. Support various authentication methods (ServiceAccount, Google Cloud, AWS, Azure, OIDC)
 3. Specify which cluster to use for each action
 
 ## Configuration Example
@@ -52,6 +52,10 @@ kubernetes:
           serviceAccountToken: ${K8S_PROD_SA_TOKEN}
           skipTLSVerify: false
           caData: ${K8S_PROD_CA_DATA}
+        - name: oidc-cluster
+          url: https://my-oidc-cluster.example.com
+          authProvider: oidc
+          oidcTokenProvider: okta
 ```
 
 # Usage
@@ -145,11 +149,56 @@ spec:
         name: ${{ parameters.name }}
 ```
 
+If the cluster is set up to use OIDC authentication, provide a user token via the `token` input in the action:
+
+```yaml
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: Create a Namespace in Kubernetes using OIDC authentication
+  name: create-namespace
+  title: Create a Namespace
+spec:
+  lifecycle: experimental
+  owner: user
+  type: example
+  parameters:
+    - properties:
+        name:
+          description: The namespace name
+          title: Name
+          type: string
+          ui:autofocus: true
+      required:
+        - name
+      title: Namespace Name
+    - title: Cluster Name
+      properties:
+        cluster:
+          type: string
+          enum:
+            - oidc-cluster
+  steps:
+    - action: kube:apply
+      id: k-apply
+      name: Create a Resouce
+      input:
+        namespaced: false
+        clusterName: ${{ parameters.cluster }}
+        token: ${{ secrets.USER_OIDC_TOKEN }}
+        manifest: |
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ${{ parameters.name }}
+```
+
 ## Authentication Methods
 
 The plugin currently supports the following authentication methods:
 
 1. **Service Account**: Uses a service account token
+2. **OIDC**: Uses a token provided by a user
 
 More methods coming soon!
 

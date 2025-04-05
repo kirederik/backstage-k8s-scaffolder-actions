@@ -16,6 +16,8 @@ export interface KubernetesClientFactoryOptions {
   };
   /** The namespace to use (optional) */
   namespace?: string;
+  /** The token to use for OIDC authentication (optional) */
+  token?: string;
 }
 
 /**
@@ -81,6 +83,13 @@ export class KubernetesClientFactory {
                   token: serviceAccountToken,
                 });
                 break;
+              case 'oidc':
+                // For OIDC auth provider, we'll add a placeholder user with the authProvider set to 'oidc'. Token will be set later from the user input.
+                kubeConfig.addUser({
+                  name: name,
+                  authProvider: 'oidc',
+                });
+                break;
               default:
                 this.logger.warn(`Unsupported auth provider: ${authProvider} for cluster ${name}, falling back to default`);
                 // For unsupported auth providers, we'll still add a placeholder user
@@ -117,36 +126,33 @@ export class KubernetesClientFactory {
 
   /**
    * Gets a Kubernetes client for the specified cluster or the default one.
+   * If specified cluster uses OIDC authentication, provided user token will be set in the kubeconfig.
    * Falls back to default kubeconfig if no specific cluster is requested or none is configured.
    */
-  public getKubeConfig(options?: KubernetesClientFactoryOptions): k8s.KubeConfig {
-    const clusterName = options?.clusterName;
-    
-    if (clusterName) {
-      const kubeConfig = this.configuredClusters.get(clusterName);
-      if (!kubeConfig) {
-        this.logger.info(`No configuration found for Kubernetes cluster "${clusterName}", falling back to default kubeconfig`);
-        const fallbackKubeConfig = new k8s.KubeConfig();
-        fallbackKubeConfig.loadFromDefault();
-        return fallbackKubeConfig;
-      }
-      
-      this.logger.info(`Using Kubernetes configuration for cluster "${clusterName}"`);
-      return kubeConfig;
+  public getKubeConfig(
+    options?: KubernetesClientFactoryOptions,
+  ): k8s.KubeConfig {
+    const clusterName = this.getEffectiveClusterName(options?.clusterName);
+
+    if (!clusterName) {
+      return this.getFallbackKubeConfig('No configured clusters available');
     }
-    
-    // If no specific cluster is requested, use the default (first) cluster
-    if (this.configuredClusters.size > 0) {
-      const defaultCluster = Array.from(this.configuredClusters.keys())[0];
-      this.logger.info(`No specific cluster requested, using default cluster "${defaultCluster}"`);
-      return this.configuredClusters.get(defaultCluster)!;
+
+    const kubeConfig = this.configuredClusters.get(clusterName);
+    if (!kubeConfig) {
+      return this.getFallbackKubeConfig(
+        `No configuration found for Kubernetes cluster "${clusterName}"`,
+      );
     }
-    
-    // Fall back to using the local kubeconfig as a last resort
-    this.logger.info('No configured clusters available, falling back to local kubeconfig');
-    const fallbackKubeConfig = new k8s.KubeConfig();
-    fallbackKubeConfig.loadFromDefault();
-    return fallbackKubeConfig;
+
+    if (this.isOIDCCluster(kubeConfig)) {
+      return this.handleOIDCKubeConfig(kubeConfig, clusterName, options);
+    }
+
+    this.logger.info(
+      `Using Kubernetes configuration for cluster "${clusterName}"`,
+    );
+    return kubeConfig;
   }
 
   /**
@@ -166,5 +172,83 @@ export class KubernetesClientFactory {
   public getObjectsClient(options?: KubernetesClientFactoryOptions): k8s.KubernetesObjectApi {
     const kubeConfig = this.getKubeConfig(options);
     return k8s.KubernetesObjectApi.makeApiClient(kubeConfig);
+  }
+
+  /**
+   * If a cluster name is provided, that name is returned. Otherwise, if any clusters are configured,
+   * the first configured cluster is returned as the default. If no clusters are configured, undefined
+   * is returned.
+   */ 
+  private getEffectiveClusterName(clusterName?: string): string | undefined {
+    if (clusterName) {
+      return clusterName;
+    }
+
+    if (this.configuredClusters.size > 0) {
+      const defaultCluster = Array.from(this.configuredClusters.keys())[0];
+      this.logger.info(
+        `No specific cluster requested, using default cluster "${defaultCluster}"`,
+      );
+      return defaultCluster;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * This method is invoked when a specific cluster configuration is unavailable or invalid.
+   * It logs the provided reason and loads the default kubeconfig from the system, which is then returned.
+   */
+  private getFallbackKubeConfig(reason: string): k8s.KubeConfig {
+    this.logger.info(`${reason}, falling back to default kubeconfig`);
+
+    const fallbackKubeConfig = new k8s.KubeConfig();
+    fallbackKubeConfig.loadFromDefault();
+
+    return fallbackKubeConfig;
+  }
+
+  private isOIDCCluster(kubeConfig: k8s.KubeConfig): boolean {
+    return kubeConfig.getCurrentUser()?.authProvider === 'oidc';
+  }
+
+  /**
+   * This method creates a new kubeconfig by copying the cluster details from the provided configuration,
+   * and then sets up a user with the given OIDC token. If the token is missing or the cluster configuration is invalid,
+   * it falls back to loading the default kubeconfig.
+   */
+  private handleOIDCKubeConfig(
+    kubeConfig: k8s.KubeConfig,
+    clusterName: string,
+    options?: KubernetesClientFactoryOptions,
+  ): k8s.KubeConfig {
+    const userToken = options?.token;
+    if (!userToken) {
+      return this.getFallbackKubeConfig(
+        `No user token provided for OIDC cluster "${clusterName}"`,
+      );
+    }
+    const cluster = kubeConfig.getCluster(clusterName);
+    if (!cluster) {
+      return this.getFallbackKubeConfig(
+        `No cluster configuration found for OIDC cluster "${clusterName}"`,
+      );
+    }
+
+    const newKubeConfig = new k8s.KubeConfig();
+    newKubeConfig.addCluster(cluster);
+    newKubeConfig.addUser({
+      name: cluster.name,
+      token: userToken,
+      authProvider: 'oidc',
+    });
+    newKubeConfig.addContext({
+      name: cluster.name,
+      cluster: cluster.name,
+      user: cluster.name,
+    });
+    newKubeConfig.setCurrentContext(cluster.name);
+
+    return newKubeConfig;
   }
 }

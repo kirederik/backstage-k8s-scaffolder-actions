@@ -8,7 +8,8 @@ export async function kubeDelete(
   namespace: string,
   logger: any,
   kubeClientFactory?: KubernetesClientFactory,
-  clusterName?: string
+  clusterName?: string,
+  token?: string
 ) {
   let client: k8s.KubernetesObjectApi;
 
@@ -17,6 +18,7 @@ export async function kubeDelete(
     client = kubeClientFactory.getObjectsClient({
       clusterName: clusterName,
       namespace: namespace,
+      token: token,
     });
     logger.info(`Using KubernetesClientFactory for cluster: ${clusterName || 'default'}`);
   } else {

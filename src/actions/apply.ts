@@ -10,6 +10,7 @@ type ApplyActionInput = {
   manifest: string;
   namespaced: boolean;
   clusterName?: string;
+  token?: string;
 };
 
 export const apply = (
@@ -29,6 +30,12 @@ export const apply = (
           .string()
           .optional()
           .describe("The name of the Kubernetes cluster to use (from app-config)"),
+        token: z
+          .string()
+          .optional()
+          .describe(
+            'An optional OIDC token that will be used to authenticate to the Kubernetes cluster',
+          ),
       }),
     },
 
@@ -38,7 +45,8 @@ export const apply = (
           ctx.input.manifest,
           ctx.logger,
           kubeClientFactory,
-          ctx.input.clusterName
+          ctx.input.clusterName,
+          ctx.input.token
         );
         if (ctx.namespaced) {
           ctx.logger.info(
