@@ -28,10 +28,10 @@ export class KubernetesClientFactory {
   private readonly logger: Logger;
   private readonly config: Config;
 
-  constructor(options: { logger: Logger; config: Config }) {
+  constructor(options: { logger: Logger; config: Config; }) {
     this.logger = options.logger;
     this.config = options.config;
-    
+
     // Initialize the cluster configurations from app-config
     this.initializeClusters();
   }
@@ -49,23 +49,23 @@ export class KubernetesClientFactory {
 
       // Get Kubernetes cluster configurations from app-config.yaml
       const clusterConfigs = this.config.getOptionalConfigArray('kubernetes.clusterLocatorMethods') || [];
-      
+
       for (const locatorConfig of clusterConfigs) {
         const type = locatorConfig.getString('type');
-        
+
         if (type === 'config') {
           // Handle config-based cluster locator
           const clusters = locatorConfig.getConfigArray('clusters');
-          
+
           for (const clusterConfig of clusters) {
             const name = clusterConfig.getString('name');
             const url = clusterConfig.getString('url');
             const authProvider = clusterConfig.getString('authProvider');
             const skipTLSVerify = clusterConfig.getOptionalBoolean('skipTLSVerify') ?? false;
             const caData = clusterConfig.getOptionalString('caData');
-            
+
             const kubeConfig = new k8s.KubeConfig();
-            
+
             // Create a cluster entry
             kubeConfig.addCluster({
               name: name,
@@ -73,7 +73,7 @@ export class KubernetesClientFactory {
               skipTLSVerify: skipTLSVerify,
               caData: caData,
             });
-            
+
             // Add auth based on the authProvider type
             switch (authProvider) {
               case 'serviceAccount':
@@ -98,17 +98,17 @@ export class KubernetesClientFactory {
                 });
                 break;
             }
-            
+
             // Set the context to use the cluster and user
             kubeConfig.addContext({
               name: name,
               cluster: name,
               user: name,
             });
-            
+
             // Set the current context
             kubeConfig.setCurrentContext(name);
-            
+
             // Store the KubeConfig in the map
             this.configuredClusters.set(name, kubeConfig);
             this.logger.info(`Added Kubernetes cluster "${name}" from app-config`);
@@ -117,7 +117,7 @@ export class KubernetesClientFactory {
           this.logger.info(`Cluster locator type "${type}" is not directly supported in this plugin yet`);
         }
       }
-      
+
       this.logger.info(`Initialized ${this.configuredClusters.size} Kubernetes clusters from config`);
     } catch (error) {
       this.logger.warn(`Failed to initialize Kubernetes clusters from config: ${error}. Will use default kubeconfig.`);
@@ -125,7 +125,7 @@ export class KubernetesClientFactory {
   }
 
   /**
-   * Gets a Kubernetes client for the specified cluster or the default one.
+   * Gets a Kubernetes config for the specified cluster or the default one.
    * If specified cluster uses OIDC authentication, provided user token will be set in the kubeconfig.
    * Falls back to default kubeconfig if no specific cluster is requested or none is configured.
    */
@@ -178,7 +178,7 @@ export class KubernetesClientFactory {
    * If a cluster name is provided, that name is returned. Otherwise, if any clusters are configured,
    * the first configured cluster is returned as the default. If no clusters are configured, undefined
    * is returned.
-   */ 
+   */
   private getEffectiveClusterName(clusterName?: string): string | undefined {
     if (clusterName) {
       return clusterName;
