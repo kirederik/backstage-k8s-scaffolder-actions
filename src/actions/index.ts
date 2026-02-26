@@ -2,6 +2,7 @@ import { TemplateAction } from "@backstage/plugin-scaffolder-node";
 import { apply } from "./apply";
 import { deleteAction } from "./delete";
 import { wait } from "./wait";
+import { patchAction } from "./patch";
 import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
 export function kubernetesActions(
@@ -10,6 +11,7 @@ export function kubernetesActions(
   return [
     apply(kubeClientFactory),
     wait(kubeClientFactory),
-    deleteAction(kubeClientFactory)
+    deleteAction(kubeClientFactory),
+    patchAction()
   ];
 }

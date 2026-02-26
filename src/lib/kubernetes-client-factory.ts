@@ -1,6 +1,6 @@
 import { Config } from '@backstage/config';
 import * as k8s from '@kubernetes/client-node';
-import { Logger } from 'winston';
+import { LoggerService } from '@backstage/backend-plugin-api';
 
 /**
  * Options for creating a Kubernetes client.
@@ -25,10 +25,10 @@ export interface KubernetesClientFactoryOptions {
  */
 export class KubernetesClientFactory {
   private configuredClusters: Map<string, k8s.KubeConfig> = new Map();
-  private readonly logger: Logger;
+  private readonly logger: LoggerService;
   private readonly config: Config;
 
-  constructor(options: { logger: Logger; config: Config; }) {
+  constructor(options: { logger: LoggerService; config: Config; }) {
     this.logger = options.logger;
     this.config = options.config;
 
@@ -159,7 +159,7 @@ export class KubernetesClientFactory {
    * Gets a Kubernetes API client for a specific Kubernetes resource type
    */
   public getApiClient<T extends k8s.ApiType>(
-    apiClientConstructor: new (server: string, opts?: k8s.HTTPOptions) => T,
+    apiClientConstructor: new (server: string, opts?: any) => T,
     options?: KubernetesClientFactoryOptions,
   ): T {
     const kubeConfig = this.getKubeConfig(options);
