@@ -30,7 +30,7 @@ export async function kubeDelete(
   }
 
   try {
-    logger.info(`Attempting to delete ${kind}/${namespace != undefined ? namespace + "/" : ""}${name} `);
+    logger.info(`Attempting to delete ${kind}/${namespace !== undefined ? `${namespace}/` : ""}${name} `);
     const obj: k8s.KubernetesObject = {
       apiVersion,
       kind,

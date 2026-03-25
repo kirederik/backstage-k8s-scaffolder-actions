@@ -19,7 +19,7 @@ describe('KubernetesClientFactory', () => {
     it('should initialize from default when kubernetes config is not present', () => {
       const mockConfig = new ConfigReader({});
 
-      new KubernetesClientFactory({
+      void new KubernetesClientFactory({
         logger: mockLogger,
         config: mockConfig,
       });
@@ -48,7 +48,7 @@ describe('KubernetesClientFactory', () => {
         },
       });
 
-      new KubernetesClientFactory({
+      void new KubernetesClientFactory({
         logger: mockLogger,
         config: mockConfig,
       });

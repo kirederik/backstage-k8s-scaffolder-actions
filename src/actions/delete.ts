@@ -1,45 +1,32 @@
-import {
-  TemplateAction,
-  createTemplateAction,
-} from "@backstage/plugin-scaffolder-node";
-import { z } from "zod";
+import { createTemplateAction } from "@backstage/plugin-scaffolder-node";
 import { kubeDelete } from "../lib/delete";
 import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
-type DeleteActionInput = {
-  namespace: string;
-  apiVersion: string;
-  kind: string;
-  name: string;
-  clusterName?: string;
-  token?: string;
-};
-
 export const deleteAction = (
   kubeClientFactory?: KubernetesClientFactory
-): TemplateAction<DeleteActionInput> => {
-  return createTemplateAction<DeleteActionInput>({
+) => {
+  return createTemplateAction({
     id: "kube:delete",
     schema: {
-      input: z.object({
-        apiVersion: z.string().describe("The apiVersion of the resource"),
-        kind: z.string().describe("The kind of the resource"),
-        name: z.string().describe("The name of the resource"),
-        namespace: z
+      input: {
+        apiVersion: (z) => z.string().describe("The apiVersion of the resource"),
+        kind: (z) => z.string().describe("The kind of the resource"),
+        name: (z) => z.string().describe("The name of the resource"),
+        namespace: (z) => z
           .string()
           .default("default")
           .describe("The namespace of the resource"),
-        clusterName: z
+        clusterName: (z) => z
           .string()
           .optional()
           .describe("The name of the Kubernetes cluster to use (from app-config)"),
-        token: z
+        token: (z) => z
           .string()
           .optional()
           .describe(
             'An optional OIDC token that will be used to authenticate to the Kubernetes cluster',
           ),
-      }),
+      },
     },
 
     async handler(ctx) {

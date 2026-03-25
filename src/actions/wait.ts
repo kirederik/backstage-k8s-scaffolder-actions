@@ -1,49 +1,37 @@
-import {
-  TemplateAction,
-  createTemplateAction,
-} from "@backstage/plugin-scaffolder-node";
+import { createTemplateAction } from "@backstage/plugin-scaffolder-node";
 import * as k8s from "@kubernetes/client-node";
-import { z } from "zod";
 import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
-
-type WaitActionInput = {
-  labels: Record<string, string>;
-  namespace: string;
-  clusterName?: string;
-  timeoutSeconds?: number;
-  token?: string;
-};
 
 export const wait = (
   kubeClientFactory?: KubernetesClientFactory
-): TemplateAction<WaitActionInput> => {
-  return createTemplateAction<WaitActionInput>({
+) => {
+  return createTemplateAction({
     id: "kube:job:wait",
     schema: {
-      input: z.object({
-        labels: z
-          .record(z.string())
+      input: {
+        labels: (z) => z
+          .record(z.string(), z.string())
           .describe("The labels of the job resource to wait on"),
-        namespace: z
+        namespace: (z) => z
           .string()
           .default("default")
           .describe("The namespace of the resource to wait on, e.g. default"),
-        clusterName: z
+        clusterName: (z) => z
           .string()
           .optional()
           .describe("The name of the Kubernetes cluster to use (from app-config)"),
-        timeoutSeconds: z
+        timeoutSeconds: (z) => z
           .number()
           .optional()
           .default(60)
           .describe("The timeout in seconds to wait for the job to complete"),
-        token: z
+        token: (z) => z
           .string()
           .optional()
           .describe(
             'An optional OIDC token that will be used to authenticate to the Kubernetes cluster',
           ),
-      }),
+      },
     },
 
     async handler(ctx) {
@@ -129,7 +117,7 @@ async function kubeWait(
     } catch (err) {
       logger?.error("Error checking job status:", err);
     }
-    logger?.info("Waiting for job to complete, attempt: " + (attempts + 1));
+    logger?.info(`Waiting for job to complete, attempt: ${(attempts + 1)}`);
     attempts++;
     await delay(5000);
   }

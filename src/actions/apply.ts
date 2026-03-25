@@ -1,42 +1,31 @@
-import {
-  TemplateAction,
-  createTemplateAction,
-} from "@backstage/plugin-scaffolder-node";
-import { z } from "zod";
+import { createTemplateAction } from "@backstage/plugin-scaffolder-node";
 import { kubeApply } from "../lib/apply";
 import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
-type ApplyActionInput = {
-  manifest: string;
-  namespaced: boolean;
-  clusterName?: string;
-  token?: string;
-};
-
 export const apply = (
   kubeClientFactory?: KubernetesClientFactory
-): TemplateAction<ApplyActionInput> => {
-  return createTemplateAction<ApplyActionInput>({
+) => {
+  return createTemplateAction({
     id: "kube:apply",
     schema: {
-      input: z.object({
-        manifest: z
+      input: {
+        manifest: (z) => z
           .string()
           .describe("The resource manifest to apply in the Platform cluster"),
-        namespaced: z
+        namespaced: (z) => z
           .boolean()
           .describe("Whether the API is namespaced or if its not"),
-        clusterName: z
+        clusterName: (z) => z
           .string()
           .optional()
           .describe("The name of the Kubernetes cluster to use (from app-config)"),
-        token: z
+        token: (z) => z
           .string()
           .optional()
           .describe(
             'An optional OIDC token that will be used to authenticate to the Kubernetes cluster',
           ),
-      }),
+      },
     },
 
     async handler(ctx: any) {

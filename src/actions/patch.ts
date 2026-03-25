@@ -1,27 +1,20 @@
-import { createTemplateAction, TemplateAction } from "@backstage/plugin-scaffolder-node";
-import { z } from "zod";
+import { createTemplateAction } from "@backstage/plugin-scaffolder-node";
 import { kubePatch } from "../lib/patch";
 
-type PatchActionInput = {
-  patchData: any;
-};
-
-export const patchAction = (): TemplateAction<PatchActionInput> => {
-  return createTemplateAction<PatchActionInput>({
+export const patchAction = () => {
+  return createTemplateAction({
     id: "kube:patch",
     description:
       "Applies a JSON or Merge patch to an existing Kubernetes resource. Equivalent to 'kubectl patch --type json|merge -f patch.json'.",
     schema: {
-      input: z.object({
-        patchData: z
-          .any()
-          .describe(
-            "Kubernetes manifest containing kind, metadata (name, namespace), and either a full spec (for merge) or an array of operations (for JSON patch)."
-          ),
-      }),
-      output: z.object({
-        result: z.any().describe("Kubernetes API response after applying the patch."),
-      }),
+      input: {
+        patchData: z => z.any().describe(
+          "Kubernetes manifest containing kind, metadata (name, namespace), and either a full spec (for merge) or an array of operations (for JSON patch)."
+        ),
+      },
+      output: {
+        result: z => z.any().describe("Kubernetes API response after applying the patch."),
+      },
     },
 
     async handler(ctx) {
