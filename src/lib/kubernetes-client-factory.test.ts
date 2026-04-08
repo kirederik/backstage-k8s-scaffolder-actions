@@ -19,10 +19,11 @@ describe('KubernetesClientFactory', () => {
     it('should initialize from default when kubernetes config is not present', () => {
       const mockConfig = new ConfigReader({});
 
-      new KubernetesClientFactory({
+      const factory = new KubernetesClientFactory({
         logger: mockLogger,
         config: mockConfig,
       });
+      expect(factory).toBeDefined();
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'No Kubernetes configuration found in app-config, will use default kubeconfig'
@@ -48,11 +49,11 @@ describe('KubernetesClientFactory', () => {
         },
       });
 
-      new KubernetesClientFactory({
+      const factory = new KubernetesClientFactory({
         logger: mockLogger,
         config: mockConfig,
       });
-
+      expect(factory).toBeDefined();
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Initialized 1 Kubernetes clusters from config'

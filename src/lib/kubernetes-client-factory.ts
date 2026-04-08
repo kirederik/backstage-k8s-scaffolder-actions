@@ -76,13 +76,14 @@ export class KubernetesClientFactory {
 
             // Add auth based on the authProvider type
             switch (authProvider) {
-              case 'serviceAccount':
+              case 'serviceAccount': {
                 const serviceAccountToken = clusterConfig.getString('serviceAccountToken');
                 kubeConfig.addUser({
                   name: name,
                   token: serviceAccountToken,
                 });
                 break;
+              }
               case 'oidc':
                 // For OIDC auth provider, we'll add a placeholder user with the authProvider set to 'oidc'. Token will be set later from the user input.
                 kubeConfig.addUser({

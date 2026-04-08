@@ -117,7 +117,7 @@ async function kubeWait(
     } catch (err) {
       logger?.error("Error checking job status:", err);
     }
-    logger?.info("Waiting for job to complete, attempt: " + (attempts + 1));
+    logger?.info(`Waiting for job to complete, attempt: ${attempts + 1}`);
     attempts++;
     await delay(5000);
   }
