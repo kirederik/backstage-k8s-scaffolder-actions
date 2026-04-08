@@ -1,4 +1,3 @@
-import * as k8s from "@kubernetes/client-node";
 import { kubeApply } from "./apply";
 import { kubeDelete } from "./delete";
 

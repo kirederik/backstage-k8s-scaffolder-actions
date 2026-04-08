@@ -2,7 +2,6 @@ import {
   TemplateAction,
   createTemplateAction,
 } from "@backstage/plugin-scaffolder-node";
-import { z } from "zod";
 import { kubeApply } from "../lib/apply";
 import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
@@ -16,10 +15,10 @@ type ApplyActionInput = {
 export const apply = (
   kubeClientFactory?: KubernetesClientFactory
 ): TemplateAction<ApplyActionInput> => {
-  return createTemplateAction<ApplyActionInput>({
+  return createTemplateAction({
     id: "kube:apply",
     schema: {
-      input: z.object({
+      input: (z) => z.object({
         manifest: z
           .string()
           .describe("The resource manifest to apply in the Platform cluster"),

@@ -1,28 +1,16 @@
-import {
-  TemplateAction,
-  createTemplateAction,
-} from "@backstage/plugin-scaffolder-node";
+import { createTemplateAction } from "@backstage/plugin-scaffolder-node";
 import * as k8s from "@kubernetes/client-node";
-import { z } from "zod";
 import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
-
-type WaitActionInput = {
-  labels: Record<string, string>;
-  namespace: string;
-  clusterName?: string;
-  timeoutSeconds?: number;
-  token?: string;
-};
 
 export const wait = (
   kubeClientFactory?: KubernetesClientFactory
-): TemplateAction<WaitActionInput> => {
-  return createTemplateAction<WaitActionInput>({
+) => {
+  return createTemplateAction({
     id: "kube:job:wait",
     schema: {
-      input: z.object({
+      input: (z) => z.object({
         labels: z
-          .record(z.string())
+          .record(z.string(), z.string())
           .describe("The labels of the job resource to wait on"),
         namespace: z
           .string()

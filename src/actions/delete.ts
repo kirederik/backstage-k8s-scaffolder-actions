@@ -2,7 +2,6 @@ import {
   TemplateAction,
   createTemplateAction,
 } from "@backstage/plugin-scaffolder-node";
-import { z } from "zod";
 import { kubeDelete } from "../lib/delete";
 import { KubernetesClientFactory } from "../lib/kubernetes-client-factory";
 
@@ -18,10 +17,10 @@ type DeleteActionInput = {
 export const deleteAction = (
   kubeClientFactory?: KubernetesClientFactory
 ): TemplateAction<DeleteActionInput> => {
-  return createTemplateAction<DeleteActionInput>({
+  return createTemplateAction({
     id: "kube:delete",
     schema: {
-      input: z.object({
+      input: (z) => z.object({
         apiVersion: z.string().describe("The apiVersion of the resource"),
         kind: z.string().describe("The kind of the resource"),
         name: z.string().describe("The name of the resource"),
